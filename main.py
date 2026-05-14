@@ -22,6 +22,15 @@ app = FastAPI(title="CRUD API dengan Autentikasi", version="1.0.0")
 Base.metadata.create_all(bind=engine)
 
 
+# ── ROLE-BASED ACCESS CONTROL ──
+
+async def require_admin(current_user: dict = Depends(get_current_user)):
+    """Dependency untuk memastikan user memiliki role admin"""
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return current_user
+
+
 # ── AUTH ENDPOINTS (tidak diproteksi) ──
 
 @app.post("/register", tags=["Auth"])
@@ -55,6 +64,7 @@ def get_events(
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
+    """GET semua events - semua user (user dan admin) dapat mengakses"""
     return db.query(Event).all()
 
 
@@ -64,6 +74,7 @@ def get_event(
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
+    """GET event by ID - semua user (user dan admin) dapat mengakses"""
     event = db.query(Event).filter(Event.id == event_id).first()
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
@@ -74,8 +85,9 @@ def get_event(
 def create_event(
     event: EventCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(require_admin)
 ):
+    """POST (Create) event - hanya admin yang dapat mengakses"""
     new_event = Event(**event.dict())
     db.add(new_event)
     db.commit()
@@ -88,8 +100,9 @@ def update_event(
     event_id: int,
     event: EventUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(require_admin)
 ):
+    """PUT (Update) event - hanya admin yang dapat mengakses"""
     db_event = db.query(Event).filter(Event.id == event_id).first()
     if not db_event:
         raise HTTPException(status_code=404, detail="Event not found")
@@ -105,8 +118,9 @@ def patch_event(
     event_id: int,
     event: EventUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(require_admin)
 ):
+    """PATCH (Partial Update) event - hanya admin yang dapat mengakses"""
     db_event = db.query(Event).filter(Event.id == event_id).first()
     if not db_event:
         raise HTTPException(status_code=404, detail="Event not found")
@@ -121,8 +135,9 @@ def patch_event(
 def delete_event(
     event_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(require_admin)
 ):
+    """DELETE event - hanya admin yang dapat mengakses"""
     db_event = db.query(Event).filter(Event.id == event_id).first()
     if not db_event:
         raise HTTPException(status_code=404, detail="Event not found")
@@ -138,6 +153,7 @@ def get_registrations(
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
+    """GET semua registrations - semua user dapat mengakses"""
     return db.query(Registration).all()
 
 
@@ -147,6 +163,7 @@ def get_registration(
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
+    """GET registration by ID - semua user dapat mengakses"""
     reg = db.query(Registration).filter(Registration.id == registration_id).first()
     if not reg:
         raise HTTPException(status_code=404, detail="Registration not found")
@@ -159,6 +176,7 @@ def create_registration(
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
+    """POST (Create) registration - semua user (user dan admin) dapat mendaftar"""
     new_reg = Registration(**registration.dict())
     db.add(new_reg)
     db.commit()
@@ -171,8 +189,9 @@ def update_registration(
     registration_id: int,
     registration: RegistrationUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(require_admin)
 ):
+    """PUT (Update) registration - hanya admin yang dapat mengakses"""
     db_reg = db.query(Registration).filter(Registration.id == registration_id).first()
     if not db_reg:
         raise HTTPException(status_code=404, detail="Registration not found")
@@ -188,8 +207,9 @@ def patch_registration(
     registration_id: int,
     registration: RegistrationUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(require_admin)
 ):
+    """PATCH (Partial Update) registration - hanya admin yang dapat mengakses"""
     db_reg = db.query(Registration).filter(Registration.id == registration_id).first()
     if not db_reg:
         raise HTTPException(status_code=404, detail="Registration not found")
@@ -204,8 +224,9 @@ def patch_registration(
 def delete_registration(
     registration_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(require_admin)
 ):
+    """DELETE registration - hanya admin yang dapat mengakses"""
     db_reg = db.query(Registration).filter(Registration.id == registration_id).first()
     if not db_reg:
         raise HTTPException(status_code=404, detail="Registration not found")
