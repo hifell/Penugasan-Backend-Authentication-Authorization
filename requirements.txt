@@ -1,0 +1,1 @@
+fastapi\nuvicorn\npasslib[bcrypt]\npython-jose[cryptography]\npython-multipart
